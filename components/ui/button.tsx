@@ -69,4 +69,3 @@ function Badge({ children, variant = "default", className }: BadgeProps) {
 }
 
 export { Badge }
-

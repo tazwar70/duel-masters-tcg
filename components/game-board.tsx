@@ -17,23 +17,23 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog"
 import DuelMastersCard from "./duel-masters-card"
-import cards from "@/lib/cards-data"
+import { cardsData } from "@/lib/cards-data"
 import { cn } from "@/lib/utils"
 
 // Simplified game state for demo purposes
 interface GameState {
-  playerDeck: typeof cards
-  opponentDeck: typeof cards
-  playerHand: typeof cards
+  playerDeck: typeof cardsData
+  opponentDeck: typeof cardsData
+  playerHand: typeof cardsData
   opponentHand: number // Just the count for opponent
-  playerShieldZone: typeof cards
+  playerShieldZone: typeof cardsData
   opponentShieldZone: number
-  playerManaZone: typeof cards
+  playerManaZone: typeof cardsData
   opponentManaZone: number
-  playerBattleZone: typeof cards
-  opponentBattleZone: typeof cards
-  playerGraveyard: typeof cards
-  opponentGraveyard: typeof cards
+  playerBattleZone: typeof cardsData
+  opponentBattleZone: typeof cardsData
+  playerGraveyard: typeof cardsData
+  opponentGraveyard: typeof cardsData
   currentPhase: "draw" | "charge" | "main" | "attack" | "end"
   currentTurn: "player" | "opponent"
   turnNumber: number
@@ -43,7 +43,7 @@ interface GameState {
 }
 
 // Helper function to check if a creature has "speed attacker" ability
-function hasSpeedAttacker(card: (typeof cards)[0]): boolean {
+function hasSpeedAttacker(card: (typeof cardsData)[0]): boolean {
   // In a real implementation, you would check the card text or abilities
   // For this demo, we'll assume no cards have speed attacker
   return card.text?.toLowerCase().includes("speed attacker") || false
@@ -55,8 +55,8 @@ export default function GameBoard() {
   const [gameStarted, setGameStarted] = useState(false)
   const [gameState, setGameState] = useState<GameState | null>(null)
   const [battleResult, setBattleResult] = useState<{
-    attacker: (typeof cards)[0]
-    defender?: (typeof cards)[0]
+    attacker: (typeof cardsData)[0]
+    defender?: (typeof cardsData)[0]
     result: "win" | "lose" | "shield" | "direct"
   } | null>(null)
 
@@ -69,7 +69,7 @@ export default function GameBoard() {
 
     // In a real app, you would load the selected deck
     // For demo, we'll create a random deck from cardsData
-    const shuffledCards = [...cards].sort(() => Math.random() - 0.5)
+    const shuffledCards = [...cardsData].sort(() => Math.random() - 0.5)
     const playerDeck = shuffledCards.slice(0, 40)
     const opponentDeck = shuffledCards.slice(40, 80)
 
@@ -815,4 +815,3 @@ function Badge({ children, variant = "default" }: { children: React.ReactNode; v
     </span>
   )
 }
-

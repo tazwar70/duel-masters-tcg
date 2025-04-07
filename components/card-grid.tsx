@@ -1,24 +1,54 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import cards from "@/lib/cards-data"
+import { Input } from "@/components/ui/input"
+import { Loader2 } from "lucide-react"
+import { useCardsData } from "@/lib/use-cards-data"
 import cardImages from "@/lib/card-images"
 import DuelMastersCard from "./duel-masters-card"
+import { cn } from "@/lib/utils"
 
 export default function CardGrid() {
+  const { cards, loading, error } = useCardsData()
   const [civilization, setCivilization] = useState<string>("all")
   const [set, setSet] = useState<string>("all")
+  const [searchTerm, setSearchTerm] = useState("")
   const [currentPage, setCurrentPage] = useState(1)
   const cardsPerPage = 12
 
+  // Reset pagination when filters change
+  useEffect(() => {
+    setCurrentPage(1)
+  }, [civilization, set, searchTerm])
+
+  // Get unique civilizations and sets for filters
+  const uniqueCivilizations = Array.from(
+    new Set(cards.flatMap((card) => (Array.isArray(card.civilization) ? card.civilization : [card.civilization]))),
+  ).sort()
+
+  const uniqueSets = Array.from(new Set(cards.map((card) => card.set))).sort()
+
   // Filter cards based on selected filters
   const filteredCards = cards.filter((card) => {
-    if (civilization !== "all" && !card.civilizations.includes(civilization)) return false
+    // Filter by civilization
+    if (civilization !== "all") {
+      if (Array.isArray(card.civilization)) {
+        if (!card.civilization.includes(civilization)) return false
+      } else if (card.civilization !== civilization) {
+        return false
+      }
+    }
+
+    // Filter by set
     if (set !== "all" && card.set !== set) return false
+
+    // Filter by search term
+    if (searchTerm && !card.name.toLowerCase().includes(searchTerm.toLowerCase())) return false
+
     return true
   })
 
@@ -27,6 +57,83 @@ export default function CardGrid() {
   const indexOfFirstCard = indexOfLastCard - cardsPerPage
   const currentCards = filteredCards.slice(indexOfFirstCard, indexOfLastCard)
   const totalPages = Math.ceil(filteredCards.length / cardsPerPage)
+
+  // Define civilization colors for badges
+  const civilizationStyles: Record<string, { bg: string; text: string; border: string; gradient: string }> = {
+    Light: {
+      bg: "bg-yellow-400",
+      text: "text-black",
+      border: "border-yellow-300",
+      gradient: "from-yellow-400",
+    },
+    Fire: {
+      bg: "bg-red-600",
+      text: "text-white",
+      border: "border-red-500",
+      gradient: "from-red-600",
+    },
+    Water: {
+      bg: "bg-blue-600",
+      text: "text-white",
+      border: "border-blue-500",
+      gradient: "from-blue-600",
+    },
+    Darkness: {
+      bg: "bg-purple-900",
+      text: "text-white",
+      border: "border-purple-800",
+      gradient: "from-purple-900",
+    },
+    Nature: {
+      bg: "bg-green-600",
+      text: "text-white",
+      border: "border-green-500",
+      gradient: "from-green-600",
+    },
+  }
+
+  // Get gradient style for multi-civilization cards
+  const getMultiCivGradient = (civs: string[]) => {
+    if (civs.length <= 1) return ""
+
+    const primary = civilizationStyles[civs[0]]?.gradient || "from-gray-500"
+    const secondary = civilizationStyles[civs[1]]?.gradient.replace("from-", "to-") || "to-gray-500"
+
+    return `bg-gradient-to-tr ${primary} ${secondary}`
+  }
+
+  if (loading) {
+    return (
+      <div className="flex flex-col items-center justify-center py-12">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        <p className="mt-4 text-muted-foreground">Loading card data...</p>
+      </div>
+    )
+  }
+
+  if (error) {
+    return (
+      <div className="rounded-md bg-yellow-50 p-4">
+        <div className="flex">
+          <div className="flex-shrink-0">
+            <svg className="h-5 w-5 text-yellow-400" viewBox="0 0 20 20" fill="currentColor">
+              <path
+                fillRule="evenodd"
+                d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z"
+                clipRule="evenodd"
+              />
+            </svg>
+          </div>
+          <div className="ml-3">
+            <h3 className="text-sm font-medium text-yellow-800">Warning</h3>
+            <div className="mt-2 text-sm text-yellow-700">
+              <p>{error}</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div className="space-y-6">
@@ -39,10 +146,11 @@ export default function CardGrid() {
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">All Sets</SelectItem>
-              <SelectItem value="dm-01">DM-01</SelectItem>
-              <SelectItem value="dm-02">DM-02</SelectItem>
-              <SelectItem value="dm-03">DM-03</SelectItem>
-              <SelectItem value="dm-04">DM-04</SelectItem>
+              {uniqueSets.map((setId) => (
+                <SelectItem key={setId} value={setId}>
+                  {setId.toUpperCase()}
+                </SelectItem>
+              ))}
             </SelectContent>
           </Select>
 
@@ -52,15 +160,25 @@ export default function CardGrid() {
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">All</SelectItem>
-              <SelectItem value="Fire">Fire</SelectItem>
-              <SelectItem value="Water">Water</SelectItem>
-              <SelectItem value="Light">Light</SelectItem>
-              <SelectItem value="Darkness">Darkness</SelectItem>
-              <SelectItem value="Nature">Nature</SelectItem>
+              {uniqueCivilizations.map((civ) => (
+                <SelectItem key={civ} value={civ}>
+                  {civ}
+                </SelectItem>
+              ))}
             </SelectContent>
           </Select>
+
+          <Input
+            type="search"
+            placeholder="Search cards..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="w-full sm:w-auto"
+          />
         </div>
       </div>
+
+      <div className="text-sm text-muted-foreground">Showing {filteredCards.length} cards</div>
 
       <Tabs defaultValue="grid" className="w-full">
         <TabsList className="grid w-40 grid-cols-2">
@@ -93,13 +211,57 @@ export default function CardGrid() {
                     </div>
                     <div className="flex-1">
                       <h3 className="font-medium">{card.name}</h3>
-                      <p className="text-sm text-muted-foreground">
-                        {card.civilizations.join(' / ')} • {card.type} • {card.set}
-                      </p>
+                      <div className="flex flex-wrap gap-1 mt-1">
+                        <span
+                          className={cn(
+                            "inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium",
+                            Array.isArray(card.civilization)
+                              ? `${getMultiCivGradient(card.civilization)} text-white`
+                              : `${civilizationStyles[card.civilization]?.bg || "bg-gray-500"} ${
+                                  civilizationStyles[card.civilization]?.text || "text-white"
+                                }`,
+                          )}
+                        >
+                          {Array.isArray(card.civilization) ? card.civilization.join(" / ") : card.civilization}
+                        </span>
+                        <span className="inline-flex items-center rounded-full bg-gray-100 px-2.5 py-0.5 text-xs font-medium text-gray-800">
+                          {card.type}
+                        </span>
+                        <span className="inline-flex items-center rounded-full bg-gray-100 px-2.5 py-0.5 text-xs font-medium text-gray-800">
+                          {card.set}
+                        </span>
+                      </div>
                     </div>
                     <div className="text-right flex items-center gap-2">
-                      <span className="text-sm font-medium">{card.cost}</span>
-                      {card.power && <span className="text-sm text-muted-foreground">{card.power}</span>}
+                      {card.type === "Creature" && (
+                        <>
+                          {card.cost !== undefined && (
+                            <div
+                              className={cn(
+                                "flex h-6 w-6 items-center justify-center rounded-full text-xs font-bold shadow-sm",
+                                Array.isArray(card.civilization)
+                                  ? `bg-gradient-to-tr ${
+                                      civilizationStyles[card.civilization[0]]?.gradient || "from-gray-500"
+                                    } ${
+                                      civilizationStyles[card.civilization[1]]?.gradient.replace("from-", "to-") ||
+                                      "to-gray-500"
+                                    } text-white`
+                                  : `${civilizationStyles[card.civilization]?.bg || "bg-gray-500"} ${
+                                      civilizationStyles[card.civilization]?.text || "text-white"
+                                    }`,
+                              )}
+                            >
+                              {card.cost}
+                            </div>
+                          )}
+                          {card.power !== undefined && (
+                            <span className="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium bg-red-600 text-white">
+                              {card.power}
+                            </span>
+                          )}
+                        </>
+                      )}
+                      <p className="text-xs text-muted-foreground">{card.rarity}</p>
                     </div>
                   </div>
                 </CardContent>
@@ -109,17 +271,23 @@ export default function CardGrid() {
         </TabsContent>
       </Tabs>
 
+      {/* Pagination */}
       {totalPages > 1 && (
-        <div className="flex justify-center gap-2">
+        <div className="flex items-center justify-center gap-1">
           <Button
             variant="outline"
+            size="sm"
             onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
             disabled={currentPage === 1}
           >
             Previous
           </Button>
+          <span className="mx-2 text-sm">
+            Page {currentPage} of {totalPages}
+          </span>
           <Button
             variant="outline"
+            size="sm"
             onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
             disabled={currentPage === totalPages}
           >
@@ -130,4 +298,3 @@ export default function CardGrid() {
     </div>
   )
 }
-

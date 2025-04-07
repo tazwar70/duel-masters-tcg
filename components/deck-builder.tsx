@@ -8,11 +8,11 @@ import { Label } from "@/components/ui/label"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { PlusCircle, MinusCircle, Save, Download, Trash2 } from "lucide-react"
-import cards from "@/lib/cards-data"
+import { cardsData } from "@/lib/cards-data"
 import DuelMastersCard from "./duel-masters-card"
 
 interface DeckCard {
-  card: (typeof cards)[0]
+  card: (typeof cardsData)[0]
   quantity: number
 }
 
@@ -23,13 +23,13 @@ export default function DeckBuilder() {
   const [searchTerm, setSearchTerm] = useState("")
 
   // Filter cards based on selected filters and search term
-  const filteredCards = cards.filter((card) => {
-    if (civilization !== "all" && !card.civilizations.includes(civilization)) return false
+  const filteredCards = cardsData.filter((card) => {
+    if (civilization !== "all" && card.civilization !== civilization) return false
     if (searchTerm && !card.name.toLowerCase().includes(searchTerm.toLowerCase())) return false
     return true
   })
 
-  const addCardToDeck = (card: (typeof cards)[0]) => {
+  const addCardToDeck = (card: (typeof cardsData)[0]) => {
     setDeckCards((prev) => {
       const existingCard = prev.find((item) => item.card.id === card.id)
       if (existingCard) {
@@ -93,22 +93,14 @@ export default function DeckBuilder() {
 
   // Calculate deck stats
   const totalCards = deckCards.reduce((sum, item) => sum + item.quantity, 0)
-  const civilizationCounts = deckCards.reduce((acc, { card, quantity }) => {
-    card.civilizations.forEach(civ => {
-      acc[civ] = (acc[civ] || 0) + quantity;
-    });
-    return acc;
-  }, {} as Record<string, number>);
-
-  const civilizationDistribution = Object.entries(civilizationCounts).map(([civ, count]) => ({
-    civilization: civ,
-    count,
-    percentage: Math.round((count / totalCards) * 100),
-  }));
-
+  const civilizationCount: Record<string, number> = {}
   const costDistribution: Record<number, number> = {}
 
   deckCards.forEach((item) => {
+    // Count by civilization
+    const civ = item.card.civilization
+    civilizationCount[civ] = (civilizationCount[civ] || 0) + item.quantity
+
     // Count by mana cost
     if (item.card.cost !== undefined) {
       costDistribution[item.card.cost] = (costDistribution[item.card.cost] || 0) + item.quantity
@@ -245,40 +237,40 @@ export default function DeckBuilder() {
                   <div>
                     <h3 className="mb-2 font-medium">Civilization Distribution</h3>
                     <div className="space-y-2">
-                      {civilizationDistribution.map(({ civilization, count, percentage }) => (
-                        <div key={civilization} className="flex items-center gap-2">
+                      {Object.entries(civilizationCount).map(([civ, count]) => (
+                        <div key={civ} className="flex items-center gap-2">
                           <div
                             className={`h-3 w-3 rounded-full ${
-                              civilization.toLowerCase() === "fire"
+                              civ.toLowerCase() === "fire"
                                 ? "bg-red-500"
-                                : civilization.toLowerCase() === "water"
+                                : civ.toLowerCase() === "water"
                                   ? "bg-blue-500"
-                                  : civilization.toLowerCase() === "light"
+                                  : civ.toLowerCase() === "light"
                                     ? "bg-yellow-500"
-                                    : civilization.toLowerCase() === "darkness"
+                                    : civ.toLowerCase() === "darkness"
                                       ? "bg-purple-900"
-                                      : civilization.toLowerCase() === "nature"
+                                      : civ.toLowerCase() === "nature"
                                         ? "bg-green-600"
                                         : "bg-gray-500"
                             }`}
                           />
-                          <span className="text-sm">{civilization}</span>
+                          <span className="text-sm">{civ}</span>
                           <div className="flex-1 rounded-full bg-muted">
                             <div
                               className={`h-2 rounded-full ${
-                                civilization.toLowerCase() === "fire"
+                                civ.toLowerCase() === "fire"
                                   ? "bg-red-500"
-                                  : civilization.toLowerCase() === "water"
+                                  : civ.toLowerCase() === "water"
                                     ? "bg-blue-500"
-                                    : civilization.toLowerCase() === "light"
+                                    : civ.toLowerCase() === "light"
                                       ? "bg-yellow-500"
-                                      : civilization.toLowerCase() === "darkness"
+                                      : civ.toLowerCase() === "darkness"
                                         ? "bg-purple-900"
-                                        : civilization.toLowerCase() === "nature"
+                                        : civ.toLowerCase() === "nature"
                                           ? "bg-green-600"
                                           : "bg-gray-500"
                               }`}
-                              style={{ width: `${percentage}%` }}
+                              style={{ width: `${(count / totalCards) * 100}%` }}
                             />
                           </div>
                           <span className="text-sm">{count}</span>
@@ -317,4 +309,3 @@ export default function DeckBuilder() {
     </div>
   )
 }
-
