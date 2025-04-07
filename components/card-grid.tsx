@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { cardsData } from "@/lib/cards-data"
+import cards from "@/lib/cards-data"
 import cardImages from "@/lib/card-images"
 import DuelMastersCard from "./duel-masters-card"
 
@@ -16,8 +16,8 @@ export default function CardGrid() {
   const cardsPerPage = 12
 
   // Filter cards based on selected filters
-  const filteredCards = cardsData.filter((card) => {
-    if (civilization !== "all" && card.civilization !== civilization) return false
+  const filteredCards = cards.filter((card) => {
+    if (civilization !== "all" && !card.civilizations.includes(civilization)) return false
     if (set !== "all" && card.set !== set) return false
     return true
   })
@@ -94,25 +94,12 @@ export default function CardGrid() {
                     <div className="flex-1">
                       <h3 className="font-medium">{card.name}</h3>
                       <p className="text-sm text-muted-foreground">
-                        {card.civilization} • {card.type} • {card.set}
+                        {card.civilizations.join(' / ')} • {card.type} • {card.set}
                       </p>
                     </div>
                     <div className="text-right flex items-center gap-2">
-                      {card.type === "Creature" && (
-                        <>
-                          {card.cost !== undefined && (
-                            <div className="flex h-6 w-6 items-center justify-center rounded-full bg-blue-500 text-xs font-bold text-white">
-                              {card.cost}
-                            </div>
-                          )}
-                          {card.power !== undefined && (
-                            <div className="inline-flex items-center rounded-md bg-green-50 px-2 py-1 text-xs font-medium text-green-700 ring-1 ring-green-600/20 ring-inset">
-                              {card.power}
-                            </div>
-                          )}
-                        </>
-                      )}
-                      <p className="text-xs text-muted-foreground">{card.rarity}</p>
+                      <span className="text-sm font-medium">{card.cost}</span>
+                      {card.power && <span className="text-sm text-muted-foreground">{card.power}</span>}
                     </div>
                   </div>
                 </CardContent>
@@ -122,23 +109,17 @@ export default function CardGrid() {
         </TabsContent>
       </Tabs>
 
-      {/* Pagination */}
       {totalPages > 1 && (
-        <div className="flex items-center justify-center gap-1">
+        <div className="flex justify-center gap-2">
           <Button
             variant="outline"
-            size="sm"
             onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
             disabled={currentPage === 1}
           >
             Previous
           </Button>
-          <span className="mx-2 text-sm">
-            Page {currentPage} of {totalPages}
-          </span>
           <Button
             variant="outline"
-            size="sm"
             onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
             disabled={currentPage === totalPages}
           >

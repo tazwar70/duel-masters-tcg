@@ -17,15 +17,18 @@ interface CardProps {
   card: {
     id: string
     name: string
-    civilization: string
     type: string
-    race?: string
-    cost?: number
+    civilizations: string[]
+    cost: number
     power?: number
     text?: string
-    imageUrl?: string
+    imageUrl: string
     set: string
+    subtypes?: string[]
+    supertypes?: string[]
     rarity: string
+    illustrator: string
+    flavor?: string
   }
   showDetails?: boolean
   onClick?: () => void
@@ -68,7 +71,8 @@ export default function DuelMastersCard({ card, showDetails = false, onClick, cl
     },
   }
 
-  const civColors = civilizationColors[card.civilization.toLowerCase()] || {
+  // Use the first civilization for the card background
+  const civColors = civilizationColors[card.civilizations[0].toLowerCase()] || {
     bg: "bg-gray-500",
     text: "text-white",
     accent: "bg-gray-600",
@@ -91,129 +95,90 @@ export default function DuelMastersCard({ card, showDetails = false, onClick, cl
           <CardContent className="p-3">
             <div className="relative aspect-[2.5/3.5] overflow-hidden rounded-sm bg-muted">
               <img
-                // src={cardImageUrl || "/placeholder.svg"}
-                src={card.imageUrl || "/placeholder.svg"}
+                src={cardImageUrl}
                 alt={card.name}
                 className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-110"
               />
 
               {/* Card name and civilization at bottom */}
-              <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-2 text-white">
-                <h3 className="font-bold leading-tight">{card.name}</h3>
-                <p className="text-xs opacity-90">{card.civilization}</p>
+              <div className="absolute bottom-0 left-0 right-0 bg-black/60 p-2 text-white">
+                <h3 className="text-sm font-medium">{card.name}</h3>
+                <p className="text-xs text-gray-300">
+                  {card.civilizations.join(' / ')} • {card.type}
+                </p>
               </div>
 
-              {/* Mana cost in top left corner as a circle with civilization color */}
-              {card.cost !== undefined && (
-                <div className="absolute left-2 top-2 flex items-center justify-center">
-                  <div
-                    className={cn(
-                      "flex h-8 w-8 items-center justify-center rounded-full border-2 border-white text-sm font-bold shadow-md",
-                      civColors.bg,
-                      civColors.text,
-                    )}
-                  >
+              {/* Cost and power overlay */}
+              <div className="absolute right-2 top-2 flex flex-col gap-1">
+                {card.cost !== undefined && (
+                  <div className={cn("flex h-6 w-6 items-center justify-center rounded-full text-xs font-bold", civColors.text, civColors.accent)}>
                     {card.cost}
                   </div>
-                </div>
-              )}
-
-              {/* Power in bottom right as a circle */}
-              {card.type === "Creature" && (
-                <div className="absolute bottom-12 right-2">
-                  <div className="inline-flex items-center rounded-md bg-green-50 px-2 py-1 text-xs font-medium text-green-700 ring-1 ring-green-600/20 ring-inset">
-                    {card.power || "?"}
+                )}
+                {card.power !== undefined && (
+                  <div className={cn("flex h-6 w-6 items-center justify-center rounded-full text-xs font-bold", civColors.text, civColors.accent)}>
+                    {card.power}
                   </div>
-                </div>
-              )}
-            </div>
-            {showDetails && (
-              <div className="mt-2 space-y-1">
-                <div className="flex items-center justify-between">
-                  <span className="text-sm font-medium">{card.type}</span>
-                  <span className="text-xs text-muted-foreground">{card.set}</span>
-                </div>
-                {card.race && <p className="text-xs text-muted-foreground">{card.race}</p>}
-                {card.text && <p className="text-xs line-clamp-2">{card.text}</p>}
+                )}
               </div>
-            )}
+            </div>
           </CardContent>
         </Card>
       </DialogTrigger>
-      <DialogContent className="sm:max-w-md">
+
+      <DialogContent className="max-w-2xl">
         <DialogHeader>
           <DialogTitle>{card.name}</DialogTitle>
           <DialogDescription>
-            {card.civilization} • {card.type} • {card.set}
+            {card.civilizations.join(' / ')} • {card.type} • {card.set}
           </DialogDescription>
         </DialogHeader>
-        <div className="flex flex-col gap-4 sm:flex-row">
-          <div className="relative aspect-[2.5/3.5] w-full max-w-[180px] overflow-hidden rounded-md bg-muted sm:w-[180px]">
-            <img src={cardImageUrl || "/placeholder.svg"} alt={card.name} className="h-full w-full object-cover" />
 
-            {/* Mana cost in top left corner as a circle with civilization color */}
-            {card.cost !== undefined && (
-              <div className="absolute left-2 top-2 flex items-center justify-center">
-                <div
-                  className={cn(
-                    "flex h-8 w-8 items-center justify-center rounded-full border-2 border-white text-sm font-bold shadow-md",
-                    civColors.bg,
-                    civColors.text,
-                  )}
-                >
+        <div className="grid gap-4 md:grid-cols-2">
+          <div className="relative aspect-[2.5/3.5] overflow-hidden rounded-sm bg-muted">
+            <img
+              src={cardImageUrl}
+              alt={card.name}
+              className="h-full w-full object-cover"
+            />
+          </div>
+
+          <div className="space-y-4">
+            <div className="flex items-center gap-2">
+              {card.cost !== undefined && (
+                <div className={cn("flex h-8 w-8 items-center justify-center rounded-full text-sm font-bold", civColors.text, civColors.accent)}>
                   {card.cost}
                 </div>
+              )}
+              {card.power !== undefined && (
+                <div className={cn("flex h-8 w-8 items-center justify-center rounded-full text-sm font-bold", civColors.text, civColors.accent)}>
+                  {card.power}
+                </div>
+              )}
+            </div>
+
+            {card.text && (
+              <div className="rounded-md bg-muted p-4">
+                <p className="text-sm">{card.text}</p>
               </div>
             )}
 
-            {/* Power in bottom right as a circle */}
-            {card.type === "Creature" && (
-              <div className="absolute bottom-12 right-2">
-                <div className="inline-flex items-center rounded-md bg-green-50 px-2 py-1 text-xs font-medium text-green-700 ring-1 ring-green-600/20 ring-inset">
-                  {card.power || "?"}
-                </div>
+            {card.flavor && (
+              <div className="rounded-md bg-muted p-4">
+                <p className="text-sm italic">{card.flavor}</p>
               </div>
             )}
-          </div>
-          <div className="flex-1 space-y-3">
-            <div className="grid grid-cols-2 gap-2">
-              <div>
-                <p className="text-sm font-medium">Civilization</p>
-                <p className="text-sm">{card.civilization}</p>
-              </div>
-              <div>
-                <p className="text-sm font-medium">Type</p>
-                <p className="text-sm">{card.type}</p>
-              </div>
-              {card.race && (
-                <div>
-                  <p className="text-sm font-medium">Race</p>
-                  <p className="text-sm">{card.race}</p>
-                </div>
+
+            <div className="text-sm text-muted-foreground">
+              <p>Illustrator: {card.illustrator}</p>
+              <p>Rarity: {card.rarity}</p>
+              {card.subtypes && card.subtypes.length > 0 && (
+                <p>Subtypes: {card.subtypes.join(', ')}</p>
               )}
-              {card.cost !== undefined && (
-                <div>
-                  <p className="text-sm font-medium">Cost</p>
-                  <p className="text-sm">{card.cost}</p>
-                </div>
+              {card.supertypes && card.supertypes.length > 0 && (
+                <p>Supertypes: {card.supertypes.join(', ')}</p>
               )}
-              {card.type === "Creature" && (
-                <div>
-                  <p className="text-sm font-medium">Power</p>
-                  <p className="text-sm">{card.power}</p>
-                </div>
-              )}
-              <div>
-                <p className="text-sm font-medium">Rarity</p>
-                <p className="text-sm">{card.rarity}</p>
-              </div>
             </div>
-            {card.text && (
-              <div>
-                <p className="text-sm font-medium">Card Text</p>
-                <p className="text-sm whitespace-pre-line">{card.text}</p>
-              </div>
-            )}
           </div>
         </div>
       </DialogContent>

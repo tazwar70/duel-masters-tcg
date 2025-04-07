@@ -1,13 +1,15 @@
 // This file provides placeholder images for Duel Masters cards
 // In a real application, you would use actual card images with proper licensing
 
+import cards from './cards-data'
+
 // Helper function to generate placeholder URLs with civilization-specific colors and imagery
 export function getCardImageUrl(card: {
   id: string
   name: string
-  civilization: string
+  civilizations: string[]
   type: string
-  race?: string
+  subtypes?: string[]
   power?: number
   cost?: number
   set: string
@@ -54,8 +56,8 @@ export function getCardImageUrl(card: {
     },
   }
 
-  // Get styles for the specified civilization or use default
-  const styles = civilizationStyles[card.civilization] || {
+  // Get styles for the first civilization or use default
+  const styles = civilizationStyles[card.civilizations[0]] || {
     bg: "9E9E9E,EEEEEE",
     text: "000000",
     gradient: "linear-gradient(135deg, #9E9E9E 0%, #EEEEEE 100%)",
@@ -65,12 +67,12 @@ export function getCardImageUrl(card: {
   // Create a unique seed for each card to generate consistent but different patterns
   const seed = card.id.charCodeAt(0) + card.id.charCodeAt(card.id.length - 1)
 
-  // Generate a pattern based on the card type and race
+  // Generate a pattern based on the card type and subtypes
   let pattern = ""
   if (card.type === "Creature") {
-    // Different patterns for different races
-    const raceHash = card.race ? card.race.charCodeAt(0) % 5 : 0
-    switch (raceHash) {
+    // Different patterns for different subtypes
+    const subtypeHash = card.subtypes && card.subtypes.length > 0 ? card.subtypes[0].charCodeAt(0) % 5 : 0
+    switch (subtypeHash) {
       case 0:
         pattern = "circles"
         break
@@ -95,77 +97,15 @@ export function getCardImageUrl(card: {
   const imageUrl =
     `/placeholder.svg?height=350&width=250&text=${encodeURIComponent(card.name)}` +
     `&colors=${styles.bg}&textColor=${styles.text}` +
-    `&pattern=${pattern}&seed=${seed}&symbol=${encodeURIComponent(styles.symbol)}`
+    `&pattern=${pattern}&seed=${seed}&symbol=${encodeURIComponent(styles.symbol)}` +
+    `&subtitle=${encodeURIComponent(card.civilizations.join(' / ') + ' • ' + card.type)}`
 
   return imageUrl
 }
 
-// Generate custom card art URLs for each card
-export function generateCardArt(card: {
-  id: string
-  name: string
-  civilization: string
-  type: string
-  race?: string
-}): string {
-  const civilizationColors: Record<string, string> = {
-    Light: "FFEB3B",
-    Fire: "F44336",
-    Water: "2196F3",
-    Darkness: "673AB7",
-    Nature: "4CAF50",
-  }
-
-  const color = civilizationColors[card.civilization] || "9E9E9E"
-  const type = card.type.toLowerCase()
-  const race = card.race ? card.race.toLowerCase().replace(/\s+/g, "-") : "unknown"
-
-  // Create a unique but deterministic seed for this card
-  const seed = card.id.split("").reduce((acc, char) => acc + char.charCodeAt(0), 0)
-
-  // Generate a unique pattern based on the card's properties
-  const patternType = seed % 6
-  let pattern = ""
-
-  switch (patternType) {
-    case 0:
-      pattern = "diagonal-lines"
-      break
-    case 1:
-      pattern = "circles"
-      break
-    case 2:
-      pattern = "hexagons"
-      break
-    case 3:
-      pattern = "triangles"
-      break
-    case 4:
-      pattern = "squares"
-      break
-    case 5:
-      pattern = "waves"
-      break
-  }
-
-  // Create a custom SVG placeholder with the card's properties
-  return (
-    `/placeholder.svg?height=350&width=250&text=${encodeURIComponent(card.name)}` +
-    `&backgroundColor=${color}&textColor=FFFFFF` +
-    `&pattern=${pattern}&seed=${seed}` +
-    `&subtitle=${encodeURIComponent(card.civilization + " • " + card.type)}`
-  )
-}
-
-// Map of card IDs to image URLs
-export const cardImages: Record<string, string> = {}
-
-// Import card data to generate placeholder images
-import { cardsData } from "./cards-data"
-
-// Generate unique placeholder images for all cards
-cardsData.forEach((card) => {
-  // Create a more detailed and unique image for each card
+// Generate placeholder images for all cards
+const cardImages: Record<string, string> = {}
+cards.forEach(card => {
   cardImages[card.id] = getCardImageUrl(card)
 })
 
